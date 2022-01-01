@@ -101,7 +101,7 @@ interpret3:
 interpret4:
         LD A,C                  ; is count zero?
         OR B
-        JR NZ, interpret3          ; if not loop
+        JR NZ, interpret3       ; if not loop
         POP BC                  ; restore offset into TIB
 ; *******************************************************************         
 ; Wait for a character from the serial input (keyboard) 
@@ -174,13 +174,13 @@ waitchar4:
 ; *********************************************************************************
 
 NEXT:                               ; 9 
-        INC BC                      ; 6t    Increment the IP
-        LD A, (BC)                  ; 7t    Get the next character and dispatch
-        LD L,A                      ; 4t    Index into table
-        LD H,msb(opcodes)           ; 7t    Start address of jump table         
-        LD L,(HL)                   ; 7t    get low jump address
-        LD H,msb(page4)             ; 7t    Load H with the 1st page address
-        JP (HL)                     ; 4t    Jump to routine
+        INC BC                      ;       Increment the IP
+        LD A, (BC)                  ;       Get the next character and dispatch
+        LD L,A                      ;       Index into table
+        LD H,msb(opcodes)           ;       Start address of jump table         
+        LD L,(HL)                   ;       get low jump address
+        LD H,msb(page4)             ;       Load H with the 1st page address
+        JP (HL)                     ;       Jump to routine
 
 ; ARRAY compilation routine
 compNEXT:                       ;=20
@@ -537,19 +537,19 @@ alt_:
         JP alt
 
 and_:        
-        POP     DE          ; 10t Bitwise AND the top 2 elements of the stack
-        POP     HL          ; 10t
-        LD      A,E         ; 4t
-        AND     L           ; 4t
-        LD      L,A         ; 4t
-        LD      A,D         ; 4t
-        AND     H           ; 4t
+        POP     DE          ;     Bitwise AND the top 2 elements of the stack
+        POP     HL          ;    
+        LD      A,E         ;   
+        AND     L           ;   
+        LD      L,A         ;   
+        LD      A,D         ;   
+        AND     H           ;   
 and1:
-        LD      H,A         ; 4t
-        PUSH    HL          ; 11t
-        JP      (IY)        ; 8t
+        LD      H,A         ;   
+        PUSH    HL          ;    
+        JP      (IY)        ;   
         
-                            ; 63t
+                            ; 
 or_: 		 
         POP     DE             ; Bitwise OR the top 2 elements of the stack
         POP     HL
@@ -561,7 +561,7 @@ or_:
         JR and1
 
 xor_:		 
-        POP     DE            ; Bitwise XOR the top 2 elements of the stack
+        POP     DE              ; Bitwise XOR the top 2 elements of the stack
 xor1:
         POP     HL
         LD      A,E
@@ -575,23 +575,23 @@ inv_:						    ; Bitwise INVert the top member of the stack
         LD DE, $FFFF            ; by xoring with $FFFF
         JR xor1        
    
-add_:                          ; Add the top 2 members of the stack
-        POP     DE             ; 10t
-        POP     HL             ; 10t
-        ADD     HL,DE          ; 11t
-        PUSH    HL             ; 11t
-        JP      (IY)           ; 8t
-                               ; 50t
+add_:                           ; Add the top 2 members of the stack
+        POP     DE                 
+        POP     HL                 
+        ADD     HL,DE              
+        PUSH    HL                 
+        JP      (IY)              
+                                 
 
 arrDef_:    
-arrDef:                     ;= 18
+arrDef:                         ;= 18
         LD A,FALSE
 arrDef1:      
         LD IY,compNEXT
         LD (vByteMode),A
-        LD HL,(vHeapPtr)    ; HL = heap ptr
-        CALL rpush          ; save start of array \[  \]
-        JP NEXT         ; hardwired to NEXT
+        LD HL,(vHeapPtr)        ; HL = heap ptr
+        CALL rpush              ; save start of array \[  \]
+        JP NEXT                 ; hardwired to NEXT
 
 arrEnd_:    JP arrEnd
 begin_:     JP begin                   
@@ -609,24 +609,24 @@ call_:
 
 def_:   JP def
 
-hdot_:                              ; print hexadecimal
+hdot_:                          ; print hexadecimal
         POP     HL
-        CALL    printhex
+        CALL printhex
         JR   dot2
 dot_:       
         POP HL
         CALL printdec
 dot2:
         LD A,' '           
-        CALL writeChar1
+        CALL putChar
         JP (IY)
 
-drop_:                      ; Discard the top member of the stack
+drop_:                          ; Discard the top member of the stack
         POP     HL
         JP      (IY)
 
 dup_:        
-        POP     HL          ; Duplicate the top member of the stack
+        POP     HL              ; Duplicate the top member of the stack
         PUSH    HL
         PUSH    HL
         JP (IY)
@@ -648,28 +648,28 @@ exit_:
         EX DE,HL
         JP (HL)
         
-fetch_:                     ; Fetch the value from the address placed on the top of the stack      
-        POP     HL          ; 10t
+fetch_:                         ; Fetch the value from the address placed on the top of the stack      
+        POP     HL              
 fetch1:
-        LD      E,(HL)      ; 7t
-        INC     HL          ; 6t
-        LD      D,(HL)      ; 7t
-        PUSH    DE          ; 11t
-        JP      (IY)        ; 8t
+        LD      E,(HL)         
+        INC     HL             
+        LD      D,(HL)         
+        PUSH    DE              
+        JP      (IY)           
 
 hex_:   JP hex
 
-nop_:       JP NEXT                 ; hardwire white space to always go to NEXT (important for arrays)
+nop_:       JP NEXT             ; hardwire white space to always go to NEXT (important for arrays)
 
 num_:   
-        JP  number
+        JP  num
 
 over_:  
-        POP     HL          ; Duplicate 2nd element of the stack
+        POP     HL              ; Duplicate 2nd element of the stack
         POP     DE
         PUSH    DE
         PUSH    HL
-        PUSH    DE          ; And push it to top of stack
+        PUSH    DE              ; And push it to top of stack
         JP (IY)        
     
 ret_:
@@ -677,51 +677,50 @@ ret_:
         LD BC,HL                
         JP (IY)             
 
-store_:                     ; Store the value at the address placed on the top of the stack
-        POP    HL           ; 10t
-        POP    DE           ; 10t
-        LD     (HL),E       ; 7t
-        INC    HL           ; 6t
-        LD     (HL),D       ; 7t
-        JP     (IY)         ; 8t
-                            ; 48t
-; $ swap                    ; a b -- b a Swap the top 2 elements of the stack
+store_:                         ; Store the value at the address placed on the top of the stack
+        POP    HL               
+        POP    DE               
+        LD     (HL),E          
+        INC    HL              
+        LD     (HL),D          
+        JP     (IY)            
+                                  
+; $ swap                        ; a b -- b a Swap the top 2 elements of the stack
 swap_:        
         POP HL
         EX (SP),HL
         PUSH HL
         JP (IY)
         
-;  Left shift { is multply by 2		
+;  Left shift { is multiply by 2		
 shl_:   
         POP HL                  ; Duplicate the top member of the stack
         ADD HL,HL
         PUSH HL                 ; shift left fallthrough into add_     
-        JP (IY)                 ; 8t
+        JP (IY)                 ;   
     
 ;  Right shift } is a divide by 2		
-		
 shr_:    
         POP HL                  ; Get the top member of the stack
 shr1:
         SRL H
         RR L
         PUSH HL
-        JP (IY)                 ; 8t
+        JP (IY)                 ;   
 
 neg_:   LD HL, 0    		    ; NEGate the value on top of stack (2's complement)
-        POP DE                  ; 10t
+        POP DE                  ;    
         JR SUB_2                ; use the SUBtract routine
     
 sub_:       				    ; Subtract the value 2nd on stack from top of stack 
         
-        POP     DE              ; 10t
-sub_1:  POP     HL              ; 10t  Entry point for INVert
-sub_2:  AND     A               ;  4t  Entry point for NEGate
+        POP     DE              ;    
+sub_1:  POP     HL              ;      Entry point for INVert
+sub_2:  AND     A               ;      Entry point for NEGate
         SBC     HL,DE           ; 15t
-        PUSH    HL              ; 11t
-        JP      (IY)            ; 8t
-                                ; 58t
+        PUSH    HL              ;    
+        JP      (IY)            ;   
+                                ; 5  
 eq_:    POP      HL
         POP      DE
         AND      A              ; reset the carry flag
@@ -753,9 +752,8 @@ var_:
         
         SUB "a" - ((VARS - mintVars)/2)  
         ADD A,A
-        LD L,A
         LD H,msb(mintVars)
-        
+        LD L,A
         PUSH HL
         JP (IY)
         
@@ -767,16 +765,16 @@ mul_:
 again_:     
         JP again
 str_:                       
-str:                                ;= 15
+str:                                
         INC BC
         
-nextchar:            
+str1:            
         LD A, (BC)
         INC BC
-        CP "`"              ; ` is the string terminator
+        CP "`"                      ; ` is the string terminator
         JR Z,str2
         CALL putchar
-        JR nextchar
+        JR str1
 
 str2:  
         DEC BC
@@ -787,7 +785,7 @@ str2:
 ;*******************************************************************
         ;falls through 
 
-getRef:                         ;= 8
+getRef:                             ;= 8
         INC BC
         LD A,(BC)
         CALL lookupDef
@@ -799,22 +797,22 @@ alt:                                ;= 11
         LD HL,altCodes
         ADD A,L
         LD L,A
-        LD L,(HL)                   ; 7t    get low jump address
+        LD L,(HL)                   ;       get low jump address
         LD H, msb(page6)            ; Load H with the 5th page address
-        JP (HL)                    ; 4t    Jump to routine
+        JP (HL)                     ;       Jump to routine
 
 ; ********************************************************************
 ; 16-bit multiply  
-mul:                        ;=19
-        POP  DE             ; get first value
+mul:                                ;=19
+        POP  DE                     ; get first value
         POP  HL
-        PUSH BC             ; Preserve the IP
-        LD B,H              ; BC = 2nd value
+        PUSH BC                     ; Preserve the IP
+        LD B,H                      ; BC = 2nd value
         LD C,L
         
         LD HL,0
         LD A,16
-Mul_Loop_1:
+mul2:
         ADD HL,HL
         RL E
         RL D
@@ -823,10 +821,10 @@ Mul_Loop_1:
         JR NC,$+3
         INC DE
         DEC A
-        JR NZ,Mul_Loop_1
+        JR NZ,mul2
 		
-		POP BC				; Restore the IP
-		PUSH HL             ; Put the product on the stack - stack bug fixed 2/12/21
+		POP BC				        ; Restore the IP
+		PUSH HL                     ; Put the product on the stack - stack bug fixed 2/12/21
 		JP (IY)
 
 ; ********************************************************************
@@ -842,41 +840,41 @@ Mul_Loop_1:
 ; 35 bytes (reduced from 48)
 		
 
-div:                        ;=24
-        POP  DE             ; get first value
-        POP  HL             ; get 2nd value
-        PUSH BC             ; Preserve the IP
-        LD B,H              ; BC = 2nd value
+div:                                ;=24
+        POP  DE                     ; get first value
+        POP  HL                     ; get 2nd value
+        PUSH BC                     ; Preserve the IP
+        LD B,H                      ; BC = 2nd value
         LD C,L		
 		
-        ld hl,0    	        ; Zero the remainder
-        ld a,16    	        ; Loop counter
+        ld hl,0    	                ; Zero the remainder
+        ld a,16    	                ; Loop counter
 
-div_loop:		            ;shift the bits from BC (numerator) into HL (accumulator)
+div1:		                        ;shift the bits from BC (numerator) into HL (accumulator)
         sla c
         rl b
         adc hl,hl
 
-        sbc hl,de			;Check if remainder >= denominator (HL>=DE)
-        jr c,div_adjust
+        sbc hl,de			        ;Check if remainder >= denominator (HL>=DE)
+        jr c,div2
         inc c
-        jr div_done
+        jr div3
 
-div_adjust:		            ; remainder is not >= denominator, so we have to add DE back to HL
+div2:		                        ; remainder is not >= denominator, so we have to add DE back to HL
         add hl,de
 
-div_done:
+div3:
         dec a
-        jr nz,div_loop
+        jr nz,div1
         
-        LD D,B              ; Result from BC to DE
+        LD D,B                      ; Result from BC to DE
         LD E,C
         
-div_end:    
-        POP  BC             ; Restore the IP
+div4:    
+        POP  BC                     ; Restore the IP
    
-        PUSH DE             ; Push Result
-        PUSH HL             ; Push remainder             
+        PUSH DE                     ; Push Result
+        PUSH HL                     ; Push remainder             
 
         JP (IY)
 
@@ -888,29 +886,29 @@ div_end:
 ; The remainder of the characters are then skipped until after a semicolon  
 ; is found.
 ; ***************************************************************************
-                            ;= 31
-def:                        ; Create a colon definition
+                                    ;= 31
+def:                                ; Create a colon definition
         INC BC
-        LD  A,(BC)          ; Get the next character
+        LD  A,(BC)                  ; Get the next character
         INC BC
         CALL lookupDef
-        LD DE,(vHeapPtr)    ; start of defintion
-        LD (HL),E           ; Save low byte of address in CFA
+        LD DE,(vHeapPtr)            ; start of defintion
+        LD (HL),E                   ; Save low byte of address in CFA
         INC HL              
-        LD (HL),D           ; Save high byte of address in CFA+1
-def1:                   ; Skip to end of definition   
-        LD A,(BC)           ; Get the next character
-        INC BC              ; Point to next character
+        LD (HL),D                   ; Save high byte of address in CFA+1
+def1:                               ; Skip to end of definition   
+        LD A,(BC)                   ; Get the next character
+        INC BC                      ; Point to next character
         LD (DE),A
         INC DE
-        CP ";"                  ; Is it a semicolon 
-        JR Z, def2           ; end the definition
-        JR  def1            ; get the next element
+        CP ";"                      ; Is it a semicolon 
+        JR Z, def2                  ; end the definition
+        JR  def1                    ; get the next element
 
 def2:    
         DEC BC
 def3:
-        LD (vHeapPtr),DE        ; bump heap ptr to after definiton
+        LD (vHeapPtr),DE            ; bump heap ptr to after definiton
         JP (IY)       
 
 ; ********************************************************************************
@@ -925,61 +923,60 @@ def3:
 ; Push HL onto the stack and proceed to the dispatch routine.
 ; ********************************************************************************
          
-number:                         ;= 23
-		LD HL,$0000				; 10t Clear HL to accept the number
-		LD A,(BC)				; 7t  Get the character which is a numeral
+num:                                ;= 23
+		LD HL,$0000				    ;     Clear HL to accept the number
+		LD A,(BC)				    ;     Get the character which is a numeral
         
-number1:                        ; corrected KB 24/11/21
+num1:                               ; corrected KB 24/11/21
 
-        SUB $30                 ; 7t    Form decimal digit
-        ADD A,L                 ; 4t    Add into bottom of HL
-        LD  L,A                 ; 4t
-        LD A,00                 ; 4t    Clear A
-        ADC	A,H	                ; Add with carry H-reg
-	    LD	H,A	                ; Put result in H-reg
+        SUB $30                     ;       Form decimal digit
+        ADD A,L                     ;       Add into bottom of HL
+        LD  L,A                     ;   
+        LD A,00                     ;       Clear A
+        ADC	A,H	                    ; Add with carry H-reg
+	    LD	H,A	                    ; Put result in H-reg
       
-        INC BC                  ; 6t    Increment IP
-        LD A, (BC)              ; 7t    and get the next character
-        CP $30                  ; 7t    Less than $30
-        JR C, endnum            ; 7/12t Not a number / end of number
-        CP $3A                  ; 7t    Greater or equal to $3A
-        JR NC, endnum           ; 7/12t Not a number / end of number
-       
-times10:                        ; Multiply digit(s) in HL by 10
-        ADD HL,HL               ; 11t    2X
-        LD  E,L                 ;  4t    LD DE,HL
-        LD  D,H                 ;  4t
-        ADD HL,HL               ; 11t    4X
-        ADD HL,HL               ; 11t    8X
-        ADD HL,DE               ; 11t    2X  + 8X  = 10X
-                                ; 52t cycles
+        INC BC                      ;       Increment IP
+        LD A, (BC)                  ;       and get the next character
+        CP $30                      ;       Less than $30
+        JR C, num2                  ;       Not a number / end of number
+        CP $3A                      ;       Greater or equal to $3A
+        JR NC, num2                 ;       Not a number / end of number
+                                    ; Multiply digit(s) in HL by 10
+        ADD HL,HL                   ;        2X
+        LD  E,L                     ;        LD DE,HL
+        LD  D,H                     ;    
+        ADD HL,HL                   ;        4X
+        ADD HL,HL                   ;        8X
+        ADD HL,DE                   ;        2X  + 8X  = 10X
+                                    ; 52t cycles
 
-        JR  number1
+        JR  num1
                 
-endnum:
+num2:
         DEC BC
-        PUSH HL                 ; 11t   Put the number on the stack
-        JP (IY)                 ; and process the next character
+        PUSH HL                     ;       Put the number on the stack
+        JP (IY)                     ; and process the next character
 
         
 ; *************************************
 ; Loop Handling Code
 ; *************************************
-        	                    ;= 23                     
-begin:                          ; Left parentesis begins a loop
+        	                        ;= 23                     
+begin:                              ; Left parentesis begins a loop
         POP HL
-        LD A,L                  ; zero?
+        LD A,L                      ; zero?
         OR H
         JR Z,begin1
         
         DEC HL
         LD DE,-6
         ADD IX,DE
-        LD (IX+0),0             ; loop var
+        LD (IX+0),0                 ; loop var
         LD (IX+1),0                 
-        LD (IX+2),L             ; loop limit
+        LD (IX+2),L                 ; loop limit
         LD (IX+3),H                 
-        LD (IX+4),C             ; loop address
+        LD (IX+4),C                 ; loop address
         LD (IX+5),B                 
 
         JP (IY)
@@ -1032,42 +1029,37 @@ again3:
         .align $100
 page6:
 
-cArrDef_:                   ; define a byte array
+cArrDef_:                           ; define a byte array
         LD A,TRUE
         JP arrDef1
 
 cFetch_:
-        POP     HL          ; 10t
-        LD      D,0         ; 7t
-        LD      E,(HL)      ; 7t
-        PUSH    DE          ; 11t
+        POP     HL          
+        LD      D,0            
+        LD      E,(HL)         
+        PUSH    DE              
 anop_:
-        JP      (IY)        ; 8t
-                            ; 49t 
+        JP      (IY)           
+                                
 charCode_:
         INC BC
         LD A,(BC)
-        LD H,0
-        LD L,A
-        PUSH HL
-        JP (IY)
+        jp key1
 
 comment_:
-        INC BC              ; point to next char
+        INC BC                      ; point to next char
         LD A,(BC)
-        CP "\r"             ; terminate at cr 
+        CP "\r"                     ; terminate at cr 
         JR NZ,comment_
-        ; CP "\n"             ; terminate at lf 
-        ; JR NZ,comment_
         DEC BC
         JP   (IY) 
 
 cStore_:	  
-        POP    HL           ; 10t
-        POP    DE           ; 10t
-        LD     (HL),E       ; 7t
-        JP     (IY)         ; 8t
-                            ; 48t
+        POP    HL               
+        POP    DE               
+        LD     (HL),E          
+        JP     (IY)            
+                             
 depth_:
         LD HL,0
         ADD HL,SP
@@ -1106,10 +1098,10 @@ exec1:
 
 go_:
         LD HL,BC
-        CALL rpush              ; save Instruction Pointer
+        CALL rpush                  ; save Instruction Pointer
         POP BC
         DEC BC
-        JP  (IY)                ; Execute code from User def
+        JP  (IY)                    ; Execute code from User def
 
 endGroup_:
         call rpop
@@ -1129,22 +1121,22 @@ group_:
         LD HL,DEFS
         ADD HL,DE
         LD (vDEFS),HL
-        JP  (IY)                ; Execute code from User def
+        JP  (IY)                    ; Execute code from User def
 
 sysVar_:
         LD A,(BC)
         SUB "a" - ((sysVars - mintVars)/2) 
         ADD A,A
-        LD L,A
         LD H,msb(mintVars)
+        LD L,A
         PUSH HL
-        JP  (IY)                ; Execute code from User def
+        JP  (IY)                    ; Execute code from User def
 
 i_:
         PUSH IX
         JP (IY)
 
-; \+    a b -- [b]+a            ; increment variable at b by a
+; \+    a b -- [b]+a                ; increment variable at b by a
 incr_:
         POP HL
         POP DE
@@ -1177,8 +1169,9 @@ j_:
 
 key_:
         CALL getchar
-        LD L,A
+key1:
         LD H,0
+        LD L,A
         PUSH HL
         JP (IY)
 
@@ -1226,7 +1219,7 @@ editDef_:
 ; update TIBPtr
 ; **************************************************************************             
 
-editDef:                    ; lookup up def based on number
+editDef:                            ; lookup up def based on number
         LD A,"A"
         POP DE
         ADD A,E
@@ -1262,7 +1255,7 @@ editDef3:
         LD (vTIBPtr),HL
         JP (IY)
 
-printStk:                   ;= 40
+printStk:                           ;= 40
         call ENTER
         .cstr "\\a@2-\\D1-(",$22,"@\\b@\\(,)(.)2-)'"             
         JP (IY)
@@ -1271,42 +1264,42 @@ printStk:                   ;= 40
 ; Page 5 primitive routines continued
 ;*******************************************************************
 
-arrEnd:                     ;= 27
-        CALL rpop               ; DE = start of array
+arrEnd:                             ;= 27
+        CALL rpop                   ; DE = start of array
         PUSH HL
         EX DE,HL
-        LD HL,(vHeapPtr)        ; HL = heap ptr
+        LD HL,(vHeapPtr)            ; HL = heap ptr
         OR A
-        SBC HL,DE               ; bytes on heap 
+        SBC HL,DE                   ; bytes on heap 
         LD A,(vByteMode)
         OR A
         JR NZ,arrEnd2
-        SRL H           ; BC = m words
+        SRL H                       ; BC = m words
         RR L
 arrEnd2:
         PUSH HL 
         LD IY,NEXT
-        JP (IY)         ; hardwired to NEXT
+        JP (IY)                     ; hardwired to NEXT
 
-hex:                            ;= 26
-	    LD HL,0		    		; 10t Clear HL to accept the number
+hex:                                ;= 26
+	    LD HL,0		    		    ;     Clear HL to accept the number
 hex1:
         INC BC
-        LD A,(BC)				; 7t  Get the character which is a numeral
-        BIT 6,A                 ; 7t    is it uppercase alpha?
-        JR Z, hex2              ; no a decimal
-        SUB 7                   ; sub 7  to make $A - $F
+        LD A,(BC)				    ;     Get the character which is a numeral
+        BIT 6,A                     ;       is it uppercase alpha?
+        JR Z, hex2                  ; no a decimal
+        SUB 7                       ; sub 7  to make $A - $F
 hex2:
-        SUB $30                 ; 7t    Form decimal digit
-        JP C,endnum
+        SUB $30                     ;       Form decimal digit
+        JP C,num2
         CP $0F+1
-        JP NC,endnum
-        ADD HL,HL               ; 11t    2X ; Multiply digit(s) in HL by 16
-        ADD HL,HL               ; 11t    4X
-        ADD HL,HL               ; 11t    8X
-        ADD HL,HL               ; 11t   16X     
-        ADD A,L                 ; 4t    Add into bottom of HL
-        LD  L,A                 ; 4t
+        JP NC,num2
+        ADD HL,HL                   ;        2X ; Multiply digit(s) in HL by 16
+        ADD HL,HL                   ;        4X
+        ADD HL,HL                   ;        8X
+        ADD HL,HL                   ;       16X     
+        ADD A,L                     ;       Add into bottom of HL
+        LD  L,A                     ;   
         JR  hex1
 
 ;*******************************************************************
@@ -1318,12 +1311,12 @@ crlf:                               ;=7
         .cstr "\r\n"
         RET
 
-enter:                          ; 9
+enter:                              ;=9
         LD HL,BC
-        CALL rpush              ; save Instruction Pointer
+        CALL rpush                  ; save Instruction Pointer
         POP BC
         DEC BC
-        JP  (IY)                ; Execute code from User def
+        JP  (IY)                    ; Execute code from User def
 
 lookupDef:                          ;=20
         SUB "A"  
@@ -1355,59 +1348,50 @@ printStr2:
         EX (SP),HL
         RET
 
-printdec:
-
-;Number in hl to decimal ASCII
-
-;inputs:	hl = number to ASCII
-;example: hl=300 outputs '00300'
-;destroys: af, de, hl
-DispHL:                         ;= 36
-        ld	de,-10000
-        call	Num1
-        ld	de,-1000
-        call	Num1
-        ld	de,-100
-        call	Num1
-        ld	e,-10
-        call	Num1
-        ld	e,-1
-Num1:	    
-        ld	a,'0'-1
-Num2:	    
-        inc	a
-        add	hl,de
-        jr	c,Num2
-        sbc	hl,de
+printdec:                           ;= 36
+        LD DE,-10000
+        CALL printdec1
+        LD DE,-1000
+        CALL printdec1
+        LD DE,-100
+        CALL printdec1
+        LD E,-10
+        CALL printdec1
+        LD E,-1
+printdec1:	    
+        LD A,'0'-1
+printdec2:	    
+        INC A
+        ADD HL,DE
+        JR C,printdec2
+        SBC HL,DE
         JP putchar
 
-; Print an 8-bit HEX number  - shortened KB 25/11/21
-; A: Number to print
-Print_Hex8:		                ;= 20
+printhex:                           ;= 11  
+                                    ; Display HL as a 16-bit number in hex.
+        PUSH BC                     ; preserve the IP
+        LD A,H
+        CALL printhex2
+        LD A,L
+        CALL printhex2
+        POP BC
+        RET
+
+printhex2:		                    ;= 20
         LD	C,A
 		RRA 
 		RRA 
 		RRA 
 		RRA 
-	    CALL conv
+	    CALL printhex3
 	    LD A,C
-conv:		
+printhex3:		
         AND	0x0F
 		ADD	A,0x90
 		DAA
 		ADC	A,0x40
 		DAA
 		JP putchar
-
-printhex:                       ;= 11  
-                                ; Display HL as a 16-bit number in hex.
-        PUSH BC                 ; preserve the IP
-        LD A,H
-        CALL Print_Hex8
-        LD A,L
-        CALL Print_Hex8
-        POP BC
-        RET
 
 rpush:                              ;=11
         DEC IX                  
@@ -1426,8 +1410,6 @@ rpop:                               ;=11
 writeChar:
         LD (DE),A
         INC DE
-        
-writeChar1:
         JP putchar
 
 
