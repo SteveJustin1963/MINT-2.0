@@ -1245,6 +1245,7 @@ editDef3:
         JP (IY)
 
 printStk:                           ;=40
+        ; MINT: \a@2- \D1- ("@ \b@ \(,)(.) 2-) '             
         call ENTER
         .cstr "\\a@2-\\D1-(",$22,"@\\b@\\(,)(.)2-)'"             
         JP (IY)
