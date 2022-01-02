@@ -26,7 +26,6 @@
 		.ORG ROMSTART + $180		
 
 start:
-mint:
         LD SP,DSTACK
         CALL initialize
         CALL printStr
@@ -41,7 +40,7 @@ iSysVars:
         DW FALSE                ; b vBase16
         DW 0                    ; c vTIBPtr
         DW DEFS                 ; d vDEFS
-        DW 0                    ; e vEdited the last command to be edited
+        DW 0                    ; e vLastDef 
         DW 0                    ; f 
         DW 0                    ; g 
         DW HEAP                 ; h vHeapPtr
@@ -78,10 +77,8 @@ macro:                          ;=25
         JR interpret2
 
 interpret:
-        call ENTER
-        .cstr "\\N`> `"
+        call prompt
 
-interpret1:                     ; used by tests
         LD BC,0                 ; load BC with offset into TIB         
         LD (vTIBPtr),BC
 
@@ -207,7 +204,7 @@ compNext1:
 ; limited to 127 levels
 ; **************************************************************************             
 
-nesting:                        ;= 44
+nesting:                        ;=44
         CP '`'
         JR NZ,nesting1
         BIT 7,E
@@ -243,6 +240,19 @@ nesting4:
 prompt:                             ;=9
         call printStr
         .cstr "\r\n> "
+        RET
+
+etx:                                ;=12
+        LD HL,-DSTACK
+        ADD HL,SP
+        JR NC,etx1
+        LD SP,DSTACK
+etx1:
+        JP interpret
+
+crlf:                               ;=7
+        call printStr
+        .cstr "\r\n"
         RET
 
 ; **************************************************************************
@@ -445,11 +455,11 @@ altCodes:
         DB     lsb(aNop_)       ;    -  
         DB     lsb(aNop_)       ;    .  
         DB     lsb(aNop_)       ;    /
-        DB     lsb(NSCall_)       ;    0           
-        DB     lsb(NSCall_)       ;    1  
-        DB     lsb(NSCall_)       ;    2            
-        DB     lsb(NSCall_)       ;    3  
-        DB     lsb(NSCall_)       ;    4            
+        DB     lsb(NSCall_)     ;    0           
+        DB     lsb(NSCall_)     ;    1  
+        DB     lsb(NSCall_)     ;    2            
+        DB     lsb(NSCall_)     ;    3  
+        DB     lsb(NSCall_)     ;    4            
         DB     lsb(aNop_)       ;    5            
         DB     lsb(aNop_)       ;    6            
         DB     lsb(aNop_)       ;    7
@@ -459,7 +469,7 @@ altCodes:
         DB     lsb(aNop_)       ;    ;  
         DB     lsb(aNop_)       ;    <
         DB     lsb(aNop_)       ;    =            
-        DB     lsb(aNop_)       ;    >            
+        DB     lsb(prompt_)     ;    >            
         DB     lsb(aNop_)       ;    ?
         DB     lsb(cFetch_)     ;    @      
         DB     lsb(aNop_)       ;    A    
@@ -581,7 +591,7 @@ add_:                           ; Add the top 2 members of the stack
                                  
 
 arrDef_:    
-arrDef:                         ;= 18
+arrDef:                         ;=18
         LD A,FALSE
 arrDef1:      
         LD IY,compNEXT
@@ -781,13 +791,13 @@ str2:
 ;*******************************************************************
         ;falls through 
 
-getRef:                             ;= 8
+getRef:                             ;=8
         INC BC
         LD A,(BC)
         CALL lookupDef
         JP fetch1
 
-alt:                                ;= 11
+alt:                                ;=11
         INC BC
         LD A,(BC)
         LD HL,altCodes
@@ -861,13 +871,13 @@ again3:
 ; The remainder of the characters are then skipped until after a semicolon  
 ; is found.
 ; ***************************************************************************
-                                    ;= 31
+                                    ;=31
 def:                                ; Create a colon definition
         INC BC
         LD  A,(BC)                  ; Get the next character
         INC BC
         SUB "A"  
-        LD (vEdited),A      
+        LD (vLastDef),A      
         CALL lookupDef2
         LD DE,(vHeapPtr)            ; start of defintion
         LD (HL),E                   ; Save low byte of address in CFA
@@ -900,7 +910,7 @@ def3:
 ; Push HL onto the stack and proceed to the dispatch routine.
 ; ********************************************************************************
          
-num:                                ;= 23
+num:                                ;=23
 		LD HL,$0000				    ;     Clear HL to accept the number
 		LD A,(BC)				    ;     Get the character which is a numeral
         
@@ -939,7 +949,7 @@ num2:
 ; *************************************
 ; Loop Handling Code
 ; *************************************
-        	                        ;= 23                     
+        	                        ;=23                     
 begin:                              ; Left parentesis begins a loop
         POP HL
         LD A,L                      ; zero?
@@ -1119,6 +1129,10 @@ NSExit_:
 NSEnter_:
         JP NSEnter
 
+prompt_:
+        CALL prompt
+        JP (IY)
+
 sysVar_:
         LD A,(BC)
         SUB "a" - ((sysVars - mintVars)/2) 
@@ -1230,7 +1244,7 @@ editDef3:
         LD (vTIBPtr),HL
         JP (IY)
 
-printStk:                           ;= 40
+printStk:                           ;=40
         call ENTER
         .cstr "\\a@2-\\D1-(",$22,"@\\b@\\(,)(.)2-)'"             
         JP (IY)
@@ -1239,15 +1253,7 @@ printStk:                           ;= 40
 ; Page 5 primitive routines continued
 ;*******************************************************************
 
-etx:                                ;=12
-        LD HL,-DSTACK
-        ADD HL,SP
-        JR NC,etx1
-        LD SP,DSTACK
-etx1:
-        JP interpret
-
-arrEnd:                             ;= 27
+arrEnd:                             ;=27
         CALL rpop                   ; DE = start of array
         PUSH HL
         EX DE,HL
@@ -1264,7 +1270,7 @@ arrEnd2:
         LD IY,NEXT
         JP (IY)                     ; hardwired to NEXT
 
-hex:                                ;= 26
+hex:                                ;=26
 	    LD HL,0		    		    ;     Clear HL to accept the number
 hex1:
         INC BC
@@ -1309,11 +1315,6 @@ NSEnter1:
 ; Subroutines
 ;*******************************************************************
 
-crlf:                               ;=7
-        call printStr
-        .cstr "\r\n"
-        RET
-
 enter:                              ;=9
         LD HL,BC
         CALL rpush                  ; save Instruction Pointer
@@ -1347,7 +1348,7 @@ printStr2:
         EX (SP),HL
         RET
 
-printdec:                           ;= 36
+printdec:                           ;=36
         LD DE,-10000
         CALL printdec1
         LD DE,-1000
@@ -1366,7 +1367,7 @@ printdec2:
         SBC HL,DE
         JP putchar
 
-printhex:                           ;= 11  
+printhex:                           ;=11  
                                     ; Display HL as a 16-bit number in hex.
         PUSH BC                     ; preserve the IP
         LD A,H
@@ -1376,7 +1377,7 @@ printhex:                           ;= 11
         POP BC
         RET
 
-printhex2:		                    ;= 20
+printhex2:		                    ;=20
         LD	C,A
 		RRA 
 		RRA 
@@ -1391,6 +1392,8 @@ printhex3:
 		ADC	A,0x40
 		DAA
 		JP putchar
+
+
 
 rpush:                              ;=11
         DEC IX                  
