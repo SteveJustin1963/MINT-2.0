@@ -16,9 +16,14 @@
 
 testsStart:
 
-    ; CALL printStr
-    ; .cstr "Done!!\r\n"
-    ; HALT
+    test ":X10;\\0X", 10
+    test ":X10; \\{1 :X100; \\} X", 10
+    test ":X10; \\{1 :X100; X \\}", 100
+    test ":X10; \\{1 :X100; \\} \\1X", 100
+
+    CALL printStr
+    .cstr "Done!!\r\n"
+    HALT
 
     test "1", 1
     test "0", 0
@@ -56,8 +61,8 @@ testsStart:
     test "1 2 3\\R+*", 8
     test "10 11 12\\D$ '$ '$ '", 4
     test "2a!a@",2
-    test "3x! 1 x\\+ x@", 4
-    test "3x! 1_ x\\+ x@", 2
+    test "3x! 1 x@+x! x@", 4
+    test "3x! 1_ x@+x! x@", 2
     test ":X1; X", 1
     test ":A100;A", 100
     test ":Aa!; 3A a@", 3
@@ -87,12 +92,12 @@ testsStart:
     test "0 1(\\i@+)", 0
     test "0 2(\\i@+)", 1
     test "0 3(\\i@+)", 3
-    test "0 2(2(\\i@\\j@++))", 4
-    test "0t! 10(1t\\+) t@",10
+    test "0 2(2(\\i@ \\i6+@ ++))", 4
+    test "0t! 10(1 t@+t!) t@",10
     test "0\\(100)(200)",200
     test "1\\(100)(200)",100
-    test "0t! 10(\\i@ 4>\\B \\i@ 1t\\+) t@",5
-    test "0t! [1 2 3] $ a! ( a@ \\i@ {+ @ t\\+ ) t@", 6
+    test "0t! 10(\\i@ 4>\\B \\i@ 1 t@+t!) t@",5
+    test "0t! [1 2 3] $ a! ( a@ \\i@ {+ @ t@+t! ) t@", 6
 
     CALL enter
     .cstr "`Done!`"

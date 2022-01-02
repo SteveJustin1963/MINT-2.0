@@ -16,8 +16,8 @@
         TRUE        EQU 1
         FALSE       EQU 0
 
-        NUMGRPS     EQU 5
-        GRPSIZE     EQU $40
+        NSNUM       EQU 5       ; namespaces 
+        NSSIZE      EQU $40
 
 ; **************************************************************************
 ; Page 0  Initialisation
@@ -55,7 +55,7 @@ initialize:
         LDIR
         
         LD HL,DEFS
-        LD B,GRPSIZE/2 * NUMGRPS
+        LD B,NSSIZE/2 * NSNUM
 init1:
         LD (HL),lsb(empty_)
         INC HL
@@ -440,16 +440,16 @@ altCodes:
         DB     lsb(ifte_)       ;    (  ( b -- )              
         DB     lsb(aNop_)       ;    )
         DB     lsb(aNop_)       ;    *            
-        DB     lsb(incr_)       ;    +  ( adr -- ) decrements variable at address
+        DB     lsb(aNop_)       ;    +  
         DB     lsb(aNop_)       ;    ,            
         DB     lsb(aNop_)       ;    -  
         DB     lsb(aNop_)       ;    .  
         DB     lsb(aNop_)       ;    /
-        DB     lsb(aNop_)       ;    0           
-        DB     lsb(aNop_)       ;    1  
-        DB     lsb(aNop_)       ;    2            
-        DB     lsb(aNop_)       ;    3  
-        DB     lsb(aNop_)       ;    4            
+        DB     lsb(NSCall_)       ;    0           
+        DB     lsb(NSCall_)       ;    1  
+        DB     lsb(NSCall_)       ;    2            
+        DB     lsb(NSCall_)       ;    3  
+        DB     lsb(NSCall_)       ;    4            
         DB     lsb(aNop_)       ;    5            
         DB     lsb(aNop_)       ;    6            
         DB     lsb(aNop_)       ;    7
@@ -503,7 +503,7 @@ altCodes:
         DB     lsb(sysVar_)     ;    g  
         DB     lsb(sysVar_)     ;    h  ; heap ptr variable
         DB     lsb(i_)          ;    i  ; returns index variable of current loop          
-        DB     lsb(j_)          ;    j  ; returns index variable of outer loop
+        DB     lsb(sysVar_)          ;    j  ; returns index variable of outer loop
         DB     lsb(sysVar_)     ;    k  
         DB     lsb(sysVar_)     ;    l
         DB     lsb(sysVar_)     ;    m  ( a b -- c ) return the minimum value
@@ -520,9 +520,9 @@ altCodes:
         DB     lsb(sysVar_)     ;    x
         DB     lsb(sysVar_)     ;    y
         DB     lsb(sysVar_)     ;    z
-        DB     lsb(group_)      ;    {
+        DB     lsb(NSEnter_)    ;    {
         DB     lsb(aNop_)       ;    |            
-        DB     lsb(endGroup_)   ;    }            
+        DB     lsb(NSExit_)     ;    }            
         DB     lsb(aNop_)       ;    ~           
         DB     lsb(aNop_)       ;    BS		
 
@@ -532,9 +532,6 @@ altCodes:
 ; **********************************************************************
         .align $100
 page4:
-
-alt_:        
-        JP alt
 
 and_:        
         POP     DE          ;     Bitwise AND the top 2 elements of the stack
@@ -599,12 +596,12 @@ call_:
         LD HL,BC
         CALL rpush              ; save Instruction Pointer
         LD A,(BC)
-        CALL lookupDef1
+        CALL lookupDef
         LD C,(HL)
         INC HL
         LD B,(HL)
         DEC BC
-        JP  (IY)                ; Execute code from User def
+        JP (IY)                
 
 
 def_:   JP def
@@ -631,14 +628,7 @@ dup_:
         PUSH    HL
         JP (IY)
 etx_:
-etx:
-        LD HL,-DSTACK
-        ADD HL,SP
-        JR NC,etx1
-        LD SP,DSTACK
-etx1:
-        JP interpret
-
+        JP ETX
         
 exit_:
         INC BC
@@ -729,8 +719,6 @@ eq_:    POP      HL
         LD       HL, 0
         JR       less           ; HL = 1    
 
-getRef_:    
-        JP getRef
 gt_:    POP      DE
         POP      HL
         JR       cmp_
@@ -758,12 +746,20 @@ var_:
         JP (IY)
         
 div_:   
-        JR div
+        JP div
+
 mul_:   
-        JP mul      
+        JR mul      
 
 again_:     
-        JP again
+        JR again
+
+getRef_:    
+        JR getRef
+
+alt_:        
+        JR alt
+
 str_:                       
 str:                                
         INC BC
@@ -822,60 +818,39 @@ mul2:
         INC DE
         DEC A
         JR NZ,mul2
-		
 		POP BC				        ; Restore the IP
 		PUSH HL                     ; Put the product on the stack - stack bug fixed 2/12/21
 		JP (IY)
 
-; ********************************************************************
-; 16-bit division subroutine.
-;
-; BC: divisor, DE: dividend, HL: remainder
-
-; *********************************************************************            
-; This divides DE by BC, storing the result in DE, remainder in HL
-; *********************************************************************
-
-; 1382 cycles
-; 35 bytes (reduced from 48)
-		
-
-div:                                ;=24
-        POP  DE                     ; get first value
-        POP  HL                     ; get 2nd value
-        PUSH BC                     ; Preserve the IP
-        LD B,H                      ; BC = 2nd value
-        LD C,L		
-		
-        ld hl,0    	                ; Zero the remainder
-        ld a,16    	                ; Loop counter
-
-div1:		                        ;shift the bits from BC (numerator) into HL (accumulator)
-        sla c
-        rl b
-        adc hl,hl
-
-        sbc hl,de			        ;Check if remainder >= denominator (HL>=DE)
-        jr c,div2
-        inc c
-        jr div3
-
-div2:		                        ; remainder is not >= denominator, so we have to add DE back to HL
-        add hl,de
-
-div3:
-        dec a
-        jr nz,div1
+again:   
+        LD E,(IX+0)                 ; peek loop var
+        LD D,(IX+1)                 
         
-        LD D,B                      ; Result from BC to DE
-        LD E,C
-        
-div4:    
-        POP  BC                     ; Restore the IP
-   
-        PUSH DE                     ; Push Result
-        PUSH HL                     ; Push remainder             
+        LD A,D                      ; check if IFTEMode
+        AND E
+        INC A
+        JR NZ,again1
+        INC DE
+        PUSH DE                     ; push FALSE condition
+        LD DE,2
+        JR again3                   ; drop IFTEMode
 
+again1:
+        LD L,(IX+2)                 ; peek loop limit
+        LD H,(IX+3)                 
+        OR A
+        SBC HL,DE
+        JR Z,again2
+        INC DE
+        LD (IX+0),E                 ; poke loop var
+        LD (IX+1),D                 
+        LD C,(IX+4)                 ; peek loop address
+        LD B,(IX+5)                 
+        JP (IY)
+again2:   
+        LD DE,6                     ; drop loop frame
+again3:
+        ADD IX,DE
         JP (IY)
 
 ; **************************************************************************             
@@ -891,7 +866,9 @@ def:                                ; Create a colon definition
         INC BC
         LD  A,(BC)                  ; Get the next character
         INC BC
-        CALL lookupDef
+        SUB "A"  
+        LD (vEdited),A      
+        CALL lookupDef2
         LD DE,(vHeapPtr)            ; start of defintion
         LD (HL),E                   ; Save low byte of address in CFA
         INC HL              
@@ -992,36 +969,58 @@ begin2:
 begin3:
         JP (IY)
 
-again:   
-        LD E,(IX+0)                 ; peek loop var
-        LD D,(IX+1)                 
-        
-        LD A,D                      ; check if IFTEMode
-        AND E
-        INC A
-        JR NZ,again1
-        INC DE
-        PUSH DE                     ; push FALSE condition
-        LD DE,2
-        JR again3                   ; drop IFTEMode
+; ********************************************************************
+; 16-bit division subroutine.
+;
+; BC: divisor, DE: dividend, HL: remainder
 
-again1:
-        LD L,(IX+2)                 ; peek loop limit
-        LD H,(IX+3)                 
-        OR A
-        SBC HL,DE
-        JR Z,again2
+; *********************************************************************            
+; This divides DE by BC, storing the result in DE, remainder in HL
+; *********************************************************************
+
+; 1382 cycles
+; 35 bytes (reduced from 48)
+		
+
+div:                                ;=24
+        POP  DE                     ; get first value
+        POP  HL                     ; get 2nd value
+        PUSH BC                     ; Preserve the IP
+        LD B,H                      ; BC = 2nd value
+        LD C,L		
+		
+        LD HL,0    	                ; Zero the remainder
+        LD A,16    	                ; Loop counter
+
+div1:		                        ;shift the bits from BC (numerator) into HL (accumulator)
+        SLA C
+        RL B
+        ADC HL,HL
+
+        SBC HL,DE			        ;Check if remainder >= denominator (HL>=DE)
+        JR C,div2
+        INC C
+        JR div3
+div2:		                        ; remainder is not >= denominator, so we have to add DE back to HL
+        ADD hl,de
+div3:
+        DEC A
+        JR NZ,div1
+        LD D,B                      ; Result from BC to DE
+        LD E,C
+div4:    
+        POP  BC                     ; Restore the IP
+        PUSH DE                     ; Push Result
+        PUSH HL                     ; Push remainder             
+
+        JP (IY)
+
+; **************************************************************************
+writeChar:
+        LD (DE),A
         INC DE
-        LD (IX+0),E                 ; poke loop var
-        LD (IX+1),D                 
-        LD C,(IX+4)                 ; peek loop address
-        LD B,(IX+5)                 
-        JP (IY)
-again2:   
-        LD DE,6                     ; drop loop frame
-again3:
-        ADD IX,DE
-        JP (IY)
+        JP putchar
+
 
 ; **************************************************************************
 ; Page 6 Alt primitives
@@ -1101,27 +1100,24 @@ go_:
         CALL rpush                  ; save Instruction Pointer
         POP BC
         DEC BC
-        JP  (IY)                    ; Execute code from User def
+        JP (IY)                     
 
-endGroup_:
+NSCall_:                            ;=25
+        LD IY,rpop2                 ; rewire NEXT to simply return
+        CALL NSEnter1               ; enter namespace return here on NEXT
+        LD A,(BC)
+        CALL lookupDef
+        PUSH HL
+        LD IY,NEXT                  ; restore NEXT
+        CALL enter                  ; enter MINT interpreter with TOS=command 
+        .cstr "@\\G"                ; execute and restore namespace
+NSExit_:                            
         call rpop
         LD (vDEFS),HL
         JP (IY)
-
-group_:
-        POP DE
-        LD D,E
-        LD E,0
-        SRL D
-        RR E
-        SRL D
-        RR E
-        LD HL,(vDEFS)
-        call rpush
-        LD HL,DEFS
-        ADD HL,DE
-        LD (vDEFS),HL
-        JP  (IY)                    ; Execute code from User def
+        
+NSEnter_:
+        JP NSEnter
 
 sysVar_:
         LD A,(BC)
@@ -1130,23 +1126,10 @@ sysVar_:
         LD H,msb(mintVars)
         LD L,A
         PUSH HL
-        JP  (IY)                    ; Execute code from User def
+        JP (IY)                    
 
 i_:
         PUSH IX
-        JP (IY)
-
-; \+    a b -- [b]+a                ; increment variable at b by a
-incr_:
-        POP HL
-        POP DE
-        LD A,E
-        ADD A,(HL)
-        LD (HL),A
-        INC HL
-        LD A,D
-        ADC A,(HL)
-        LD (HL),A
         JP (IY)
 
 inPort_:
@@ -1158,14 +1141,6 @@ inPort_:
         LD C,A
         PUSH HL
         JP (IY)        
-
-j_:
-        PUSH IX
-        POP HL
-        LD DE,6
-        ADD HL,DE
-        PUSH HL
-        JP (IY)
 
 key_:
         CALL getchar
@@ -1264,6 +1239,14 @@ printStk:                           ;= 40
 ; Page 5 primitive routines continued
 ;*******************************************************************
 
+etx:                                ;=12
+        LD HL,-DSTACK
+        ADD HL,SP
+        JR NC,etx1
+        LD SP,DSTACK
+etx1:
+        JP interpret
+
 arrEnd:                             ;= 27
         CALL rpop                   ; DE = start of array
         PUSH HL
@@ -1302,6 +1285,26 @@ hex2:
         LD  L,A                     ;   
         JR  hex1
 
+NSEnter:                            ;=26
+        INC BC
+NSEnter1:
+        LD A,(BC)                   ; read NS ASCII code
+        SUB "0"                     ; convert to number
+        INC BC
+        LD D,A                      ; multiply by 64
+        LD E,0
+        SRL D
+        RR E
+        SRL D
+        RR E
+        LD HL,(vDEFS)               ; 
+        call rpush
+        LD HL,DEFS
+        ADD HL,DE
+        LD (vDEFS),HL
+        JP (IY)                    
+
+
 ;*******************************************************************
 ; Subroutines
 ;*******************************************************************
@@ -1316,13 +1319,9 @@ enter:                              ;=9
         CALL rpush                  ; save Instruction Pointer
         POP BC
         DEC BC
-        JP  (IY)                    ; Execute code from User def
+        JP (IY)                    
 
-lookupDef:                          ;=20
-        SUB "A"  
-        LD (vEdited),A      
-        JR lookupDef2
-lookupDef1:
+lookupDef:
         SUB "A"  
 lookupDef2:
         ADD A,A
@@ -1405,11 +1404,6 @@ rpop:                               ;=11
         INC IX              
         LD H,(IX+0)
         INC IX                  
+rpop2:
         RET
         
-writeChar:
-        LD (DE),A
-        INC DE
-        JP putchar
-
-

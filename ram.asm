@@ -67,6 +67,6 @@ vars:       DS 26 * 2
             .align $40
             .org $-12
             DS 12               ; vars for group 0 
-defs:       DS GRPSIZE * NUMGRPS
+defs:       DS NSSIZE * NSNUM
 
 HEAP:         
