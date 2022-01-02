@@ -78,7 +78,7 @@ There are also a small group of primitives that perform operations on the stack,
 In total, MINT contains 33 primitives which are executed when the interpreter finds the relevant symbol. Some of these will be commonly used arithmetic symbols like "+" and "-" Others are allocated to punctuation symbols. The full-stop, or dot character is used to print out the number held on the top of the stack.
 
 ALTERNATE CODES
-Because ASCII provides only a limited set of symbols to use as primitives, MINT extends the basic set with a set of symbols prefixed by a \. An alternate code is any symbol or uppercase letter starting with a \ e.g. \+ \D etc. Alternate lowercase letters serve as system variables
+Because ASCII provides only a limited set of symbols to use as primitives, MINT extends the basic set with a set of symbols prefixed by a \. An alternate code is any symbol or uppercase letter starting with a \ e.g. \D \K etc. Alternate lowercase letters serve as system variables
 
 USER COMMANDS
 
@@ -236,7 +236,6 @@ NOTE:
 | \\(    | beginIFTE \\(`true`)(`false`)                     | b --   |
 | \\B    | if true break out of loop                         | b --   |
 | \\i    | loop counter variable                             | -- adr |
-| \\j    | outer loop counter variable                       | -- adr |
 
 ### Memory and Variable Operations
 
