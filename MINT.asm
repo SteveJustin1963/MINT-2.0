@@ -63,6 +63,14 @@ init1:
         DJNZ init1
         RET
 
+etx:                                ;=12
+        LD HL,-DSTACK
+        ADD HL,SP
+        JR NC,etx1
+        LD SP,DSTACK
+etx1:
+        JR interpret
+
 macro:                          ;=25
         LD (vTIBPtr),BC
         LD HL,ctrlCodes
@@ -241,14 +249,6 @@ prompt:                             ;=9
         call printStr
         .cstr "\r\n> "
         RET
-
-etx:                                ;=12
-        LD HL,-DSTACK
-        ADD HL,SP
-        JR NC,etx1
-        LD SP,DSTACK
-etx1:
-        JP interpret
 
 crlf:                               ;=7
         call printStr
@@ -513,7 +513,7 @@ altCodes:
         DB     lsb(sysVar_)     ;    g  
         DB     lsb(sysVar_)     ;    h  ; heap ptr variable
         DB     lsb(i_)          ;    i  ; returns index variable of current loop          
-        DB     lsb(sysVar_)          ;    j  ; returns index variable of outer loop
+        DB     lsb(j_)          ;    j  ; returns index variable of outer loop
         DB     lsb(sysVar_)     ;    k  
         DB     lsb(sysVar_)     ;    l
         DB     lsb(sysVar_)     ;    m  ( a b -- c ) return the minimum value
@@ -1146,6 +1146,14 @@ i_:
         PUSH IX
         JP (IY)
 
+j_:
+        PUSH IX
+        POP HL
+        LD DE,6
+        ADD HL,DE
+        PUSH HL
+        JP (IY)
+        
 inPort_:
         POP HL
         LD A,C
@@ -1393,8 +1401,6 @@ printhex3:
 		ADC	A,0x40
 		DAA
 		JP putchar
-
-
 
 rpush:                              ;=11
         DEC IX                  
