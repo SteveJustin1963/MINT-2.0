@@ -173,6 +173,11 @@ The code prints `70 60 70`
 This program adds `20` from `10` which results in the value `30`
 The `.` operator prints the sum.
 
+When performing operations that exceed the maximum limit and cause a rollover, a carry flag is activated. This flag can be accessed using /c (in lowercase). For instance, in the operation #FFFF 1 + /c +, adding 1 to #FFFF causes it to rollover to 0000, while simultaneously setting the carry flag to 1. By placing the /c flag on the stack and adding it back, the final result becomes 1.
+
+
+
+
 ```
 5 4 * .
 ```
